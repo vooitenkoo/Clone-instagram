@@ -1,0 +1,196 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #000; /* Черный фон */
+    color: #fff; /* Белый текст */
+    margin: 0; /* Убирает отступы по умолчанию */
+}
+
+header {
+    background-color: #1a1a1a; /* Темно-серый фон заголовка */
+    border-bottom: 1px solid #333; /* Более темная линия */
+    padding: 10px 0;
+    position: fixed; /* Закрепляет элемент на экране */
+    width: 100%;
+    top: 0;
+    z-index: 1000; /* Определяет порядок наложения */
+}
+
+main {
+    padding-top: 70px; /* Отступ сверху, чтобы контент не прилипал к заголовку */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center; /* Центрирование текста */
+}
+.profile-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 50%; /* Ограничиваем ширину */
+    margin: 20px auto; /* Центрирование секции */
+    padding: 40px;
+    background-color: #1a1a1a; /* Темно-серый фон */
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Тень для блока */
+    position: relative;
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+    border: 2px solid #fff; /* Белая рамка вокруг изображения */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 75px; /* Размер иконки */
+    color: #fff; /* Цвет иконки */
+    background-color: #333; /* Фон для иконки */
+}
+
+.profile-info {
+    width: 100%; /* Ширина 100% */
+    text-align: center; /* Центрирование текста */
+}
+
+.profile-info h1 {
+    color: #ff0000; /* Красный цвет заголовка */
+    font-weight: bold; /* Жирный шрифт */
+    font-size: 24px; /* Увеличенный размер шрифта */
+    margin-bottom: 10px;
+}
+
+.profile-info .bio-container {
+    background-color: #333; /* Темный фон контейнера */
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%; /* Ограничиваем ширину */
+    margin: 10px auto; /* Центрирование контейнера */
+    text-align: left; /* Выровняем текст влево */
+}
+
+.profile-info .bio-container p {
+    font-size: 16px; /* Размер шрифта */
+    margin: 0; /* Убираем отступы */
+    color: #fff; /* Белый текст */
+}
+
+.edit-profile {
+    position: absolute;
+    top: 0;
+    right: 10px; /* Смещаем кнопку вправо */
+    background-color: #5cb85c;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.edit-profile:hover {
+    background-color: #4cae4c;
+}
+.profile-info p {
+    font-size: 18px; /* Размер шрифта */
+    margin: 5px 0; /* Отступы между параграфами */
+}
+
+#special-container {
+    width: 20%; /* Ширина контейнера */
+    margin: 0 auto; /* Автоматическое выравнивание по горизонтали */
+}
+
+.container {
+    background-color: #1a1a1a; /* Темно-серый фон контейнера */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Более темная тень */
+    width: 350px;
+    text-align: center;
+    margin: 10px 0; /* Отступы между контейнерами */
+}
+
+.container h1 {
+    margin-bottom: 20px;
+    color: #ff0000; /* Красный цвет заголовка */
+    font-weight: bold; /* Жирный шрифт */
+    font-size: 24px; /* Увеличенный размер шрифта */
+}
+
+.container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.container input {
+    width: 90%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #333; /* Темный фон для инпутов */
+    color: #fff; /* Белый текст в инпутах */
+}
+
+.container button {
+    width: 100%;
+    padding: 10px;
+    background-color: #5cb85c;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.container button:hover {
+    background-color: #4cae4c;
+}
+
+.error {
+    color: red;
+    margin-bottom: 10px;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff; /* Белый текст */
+    text-decoration: none;
+}
+ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+ul li {
+    margin-left: 20px;
+}
+
+ul li a {
+    text-decoration: none;
+    color: #fff; /* Белый текст */
+    font-size: 18px;
+}
+
+ul li a:hover {
+    color: #ccc; /* Светло-серый при наведении */
+}
+
+ul li a i {
+    margin-right: 8px;
+}

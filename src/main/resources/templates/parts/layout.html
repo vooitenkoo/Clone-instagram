@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Instagram Clone</title>
+    <link media="all" rel="stylesheet" th:href="@{/css/style.css}" type="text/css"/>
+    <link media="all" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<header>
+    <nav>
+        <a href="/main" class="logo"><i class="fab fa-instagram"></i> Instagram</a>
+        <ul>
+            <li><a href="/main"><i class="fas fa-home"></i> Главная</a></li>
+            <li><a href="/chat"><i class="fas fa-comments"></i> Чат</a></li>
+            <li><a href="/search"><i class="fas fa-search"></i> Поисковой запрос</a></li>
+            <li><a href="/profile"><i class="fas fa-user"></i> Профиль</a></li>
+        </ul>
+        <form th:action="@{/logout}" method="post" style="display: inline;">
+            <button type="submit" class="signout-btn"><i class="fas fa-sign-out-alt"></i> Sign out</button>
+        </form>
+    </nav>
+</header>
+
+
+
+</body>
+</html>
