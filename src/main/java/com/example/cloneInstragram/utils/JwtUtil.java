@@ -1,44 +1,45 @@
-//package com.example.cloneInstragram.utils;
-//
-//import io.jsonwebtoken.*;
-//import io.jsonwebtoken.security.Keys;
-//import org.springframework.stereotype.Component;
-//
-//import java.security.Key;
-//import java.util.Date;
-//
-//@Component
-//public class JwtUtil {
-//
-//    private final String SECRET_KEY = "SuperSecretKeyForJwtTokenThatIsVeryStrongAndSecure"; // Длина > 32 символов
-//    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-//
-//    public String generateAccessToken(String username) {
-//        return Jwts.builder()
-//                .setSubject(username)
-//                .setExpiration(new Date(System.currentTimeMillis() + 15 * 60 * 1000)) // 15 минут
-//                .signWith(key, SignatureAlgorithm.HS256)
-//                .compact();
-//    }
-//
-//    public String generateRefreshToken(String username) {
-//        return Jwts.builder()
-//                .setSubject(username)
-//                .setExpiration(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000)) // 7 дней
-//                .signWith(key, SignatureAlgorithm.HS256)
-//                .compact();
-//    }
-//
-//    public boolean validateToken(String token) {
-//        try {
-//            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-//            return true;
-//        } catch (JwtException e) {
-//            return false;
-//        }
-//    }
-//
-//    public String getUsernameFromToken(String token) {
-//        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
-//    }
-//}
+package com.example.cloneInstragram.utils;
+
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.stereotype.Component;
+
+import java.security.Key;
+import java.util.Date;
+
+@Component
+public class JwtUtil {
+
+    private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 час
+                .signWith(SECRET_KEY)
+                .compact();
+    }
+
+    public String extractUsername(String token) {
+        return getClaims(token).getSubject();
+    }
+
+    public boolean validateToken(String token, String username) {
+        return (username.equals(extractUsername(token)) && !isTokenExpired(token));
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parser()
+                .setSigningKey(SECRET_KEY)
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    private boolean isTokenExpired(String token) {
+        return getClaims(token).getExpiration().before(new Date());
+    }
+}
