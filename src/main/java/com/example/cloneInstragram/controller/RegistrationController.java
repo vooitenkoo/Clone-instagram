@@ -35,7 +35,7 @@ public class RegistrationController {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody UserLoginDTO userDTO) {
-        Optional<User> userOptional = userService.findByUsername(userDTO.getUsername());
+        Optional<User> userOptional = Optional.ofNullable(userService.findByUsername(userDTO.getUsername()));
 
         if (userOptional.isEmpty() || !userService.passwordMatches(userDTO.getPassword(), userOptional.get())) {
             return ResponseEntity.status(401).body("Invalid username or password");

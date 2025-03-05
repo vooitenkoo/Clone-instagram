@@ -1,43 +1,25 @@
 package com.example.cloneInstragram.dto;
 
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
+
+@Data
 public class UserDTO {
     private String username;
     private String bio;
     private String profilePicture;
+    private int followersCount;
+    private int followingCount;
+    private boolean isFollowing;
 
-    // Конструкторы
-    public UserDTO( String username, String bio, String profilePicture) {
-
+    public UserDTO(String username, String bio, String profilePicture, int followersCount, int followingCount, boolean isFollowing) {
         this.username = username;
         this.bio = bio;
         this.profilePicture = profilePicture;
-    }
-
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
-
-    public String getProfilePicture() {
-        return profilePicture;
-    }
-
-    public void setProfilePicture(String profilePicture) {
-        this.profilePicture = profilePicture;
+        this.followersCount = followersCount;
+        this.followingCount = followingCount;
+        this.isFollowing = isFollowing;
     }
 }

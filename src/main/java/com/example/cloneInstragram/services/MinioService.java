@@ -1,6 +1,5 @@
 package com.example.cloneInstragram.services;
 
-
 import io.minio.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,25 +12,22 @@ import java.util.UUID;
 public class MinioService {
 
     private final MinioClient minioClient;
-    private final String bucketName;
 
     public MinioService(@Value("${minio.url}") String url,
                         @Value("${minio.accessKey}") String accessKey,
-                        @Value("${minio.secretKey}") String secretKey,
-                        @Value("${minio.bucket}") String bucket) {
+                        @Value("${minio.secretKey}") String secretKey) {
         this.minioClient = MinioClient.builder()
                 .endpoint(url)
                 .credentials(accessKey, secretKey)
                 .build();
-        this.bucketName = bucket;
     }
 
-    public String uploadFile(MultipartFile file) {
+    public String uploadFile(MultipartFile file, String bucketName) {
         try {
             String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
             InputStream inputStream = file.getInputStream();
 
-            System.out.println("Загружаем файл в MinIO: " + fileName + ", размер: " + file.getSize());
+            System.out.println("Загружаем файл в MinIO: " + fileName + ", размер: " + file.getSize() + " в бакет: " + bucketName);
 
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -50,8 +46,8 @@ public class MinioService {
         }
     }
 
-
-    public InputStream getFile(String fileName) {
+    // Метод для получения файла из MinIO
+    public InputStream getFile(String fileName, String bucketName) {
         try {
             return minioClient.getObject(
                     GetObjectArgs.builder()

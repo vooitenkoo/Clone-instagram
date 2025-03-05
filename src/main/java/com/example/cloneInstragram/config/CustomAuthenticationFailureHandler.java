@@ -1,4 +1,4 @@
-package com.example.cloneInstragram.services;
+package com.example.cloneInstragram.config;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
