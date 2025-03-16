@@ -17,11 +17,13 @@ public class FollowService {
     private final FollowRepo followRepo;
     private final UserRepo userRepo;
     private final UserService userService;
+    private final NotificationService notificationService;
 
-    public FollowService(FollowRepo followRepo, UserRepo userRepo, UserService userService) {
+    public FollowService(FollowRepo followRepo, UserRepo userRepo, UserService userService, NotificationService notificationService) {
         this.followRepo = followRepo;
         this.userRepo = userRepo;
         this.userService = userService;
+        this.notificationService = notificationService;
     }
 
     public void followUser(Long followerId, Long followingId) {
@@ -38,6 +40,13 @@ public class FollowService {
         follow.setFollower(follower);
         follow.setFollowing(following);
         followRepo.save(follow);
+        notificationService.createNotification(
+                following.getId(),  // Пользователь, на которого подписались
+                follower.getId(),   // Кто подписался
+                "FOLLOW",
+                follower.getUsername() + " started following you",
+                null
+        );
     }
 
     @Transactional

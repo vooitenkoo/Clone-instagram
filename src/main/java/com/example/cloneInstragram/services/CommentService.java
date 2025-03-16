@@ -4,9 +4,12 @@ import com.example.cloneInstragram.dto.CommentDto;
 import com.example.cloneInstragram.dto.PostDto;
 import com.example.cloneInstragram.entity.Comment;
 import com.example.cloneInstragram.entity.Post;
+import com.example.cloneInstragram.entity.PostInteraction;
 import com.example.cloneInstragram.entity.User;
 import com.example.cloneInstragram.repos.CommentRepo;
 
+import com.example.cloneInstragram.repos.PostInteractionRepo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -18,10 +21,16 @@ public class CommentService {
 
     private final CommentRepo commentRepo;
     private final PostService postService;
+    private final NotificationService notificationService;
 
-    public CommentService(CommentRepo commentRepo, PostService postService) {
+    private final PostInteractionRepo postInteractionRepo;
+
+
+    public CommentService(CommentRepo commentRepo, PostService postService, NotificationService notificationService, PostInteractionRepo postInteractionRepo) {
         this.commentRepo = commentRepo;
         this.postService = postService;
+        this.notificationService = notificationService;
+        this.postInteractionRepo = postInteractionRepo;
     }
 
     public List<Comment> getComments() {
@@ -62,6 +71,20 @@ public class CommentService {
         comment.setText(text);
         commentRepo.save(comment);
 
+
+        PostInteraction interaction = new PostInteraction();
+        interaction.setUser(user);
+        interaction.setPost(post);
+        interaction.setType("COMMENT");
+        postInteractionRepo.save(interaction);
+
+        notificationService.createNotification(
+                post.getUser().getId(),  // Владелец поста (он получает уведомление)
+                user.getId(),  // Кто оставил комментарий
+                "COMMENT",
+                user.getUsername() + " commented on your post",
+                postId
+        );
         return toCommentDto(comment);
     }
 

@@ -3,6 +3,7 @@ package com.example.cloneInstragram.repos;
 import com.example.cloneInstragram.entity.Follow;
 import com.example.cloneInstragram.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -31,4 +32,8 @@ public interface FollowRepo extends JpaRepository<Follow, Long> {
 
     // Удаление подписки
     void deleteByFollowerAndFollowing(User follower, User following);
+
+    @Query("SELECT f.following.id FROM Follow f WHERE f.follower.id = :followingId")
+    List<Long> findFollowedUserIdsByFollowingId(Long followingId);
+
 }

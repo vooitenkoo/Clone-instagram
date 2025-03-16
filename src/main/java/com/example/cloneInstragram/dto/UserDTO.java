@@ -22,4 +22,5 @@ public class UserDTO {
         this.followingCount = followingCount;
         this.isFollowing = isFollowing;
     }
+
 }

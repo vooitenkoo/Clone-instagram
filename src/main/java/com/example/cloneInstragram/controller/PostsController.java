@@ -45,10 +45,11 @@ public class PostsController {
         return ResponseEntity.ok(posts);
     }
 
-
-
-
-
-
+    @GetMapping("/recommendation")
+    public ResponseEntity<List<PostDto>> getRecommendations(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByUsername(userDetails.getUsername());
+        List<PostDto> recommendedPosts = postService.getRecommendedPosts(user);
+        return ResponseEntity.ok(recommendedPosts);
+    }
 
 }

@@ -1,5 +1,6 @@
 package com.example.cloneInstragram.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -52,20 +53,25 @@ public class User implements UserDetails {
     private Set<Role> roles;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Post> posts = new ArrayList<>();
 
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Like> likes = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Comment> comments = new ArrayList<>();
 
 
     @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Follow> following = new HashSet<>();
 
     @OneToMany(mappedBy = "following", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Follow> followers = new HashSet<>();
 
 

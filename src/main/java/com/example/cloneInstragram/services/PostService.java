@@ -3,12 +3,15 @@ package com.example.cloneInstragram.services;
 import com.example.cloneInstragram.dto.PostDto;
 import com.example.cloneInstragram.entity.Post;
 import com.example.cloneInstragram.entity.User;
+import com.example.cloneInstragram.repos.FollowRepo;
+import com.example.cloneInstragram.repos.PostInteractionRepo;
 import com.example.cloneInstragram.repos.PostRepo;
 
 import com.example.cloneInstragram.repos.UserRepo;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -16,8 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +29,11 @@ public class PostService {
     private final PostRepo postRepository;
     private final UserRepo userRepository;
     private final MinioService minioService;
+    private final FollowRepo followRepo;
+
+    @Autowired
+    private PostInteractionRepo postInteractionRepo;
+
 
     public PostDto createPost(String username, String content, MultipartFile image) {
         User user = userRepository.findByUsername(username)
@@ -97,4 +104,36 @@ public class PostService {
                 post.getUser().getUsername()
         );
     }
+    public List<PostDto> getRecommendedPosts(User user) {
+        // 1. Получаем ID пользователей, на которых подписан юзер
+        List<Long> followedUserIds = followRepo.findFollowedUserIdsByFollowingId(user.getId());
+        System.out.println("Followed users: " + followedUserIds);
+
+        List<Post> friendPosts = postRepository.findByUserIdIn(followedUserIds);
+
+        List<Long> likedPostIds = postInteractionRepo.findPostIdsLikedByUser(user.getId());
+        List<User> similarUsers = postInteractionRepo.findUsersWhoLikedSamePosts(likedPostIds, user.getId());
+
+
+        List<Long> recommendedPostIds = postInteractionRepo.findPostsLikedByUser(similarUsers);
+        List<Post> recommendedPosts = postRepository.findByIdIn(recommendedPostIds);
+
+        // 5. Добавляем самые популярные посты (по лайкам и комментариям)
+        List<Post> trendingPosts = postRepository.findTopTrendingPosts();
+
+
+        Set<Post> finalFeed = new LinkedHashSet<>();
+        finalFeed.addAll(friendPosts);
+        finalFeed.addAll(recommendedPosts);
+        finalFeed.addAll(trendingPosts);
+
+        finalFeed = finalFeed.stream()
+                .filter(post -> !post.getUser().getId().equals(user.getId()))
+                .collect(Collectors.toSet());
+
+
+        return finalFeed.stream().map(this::toPostDto).toList();
+    }
+
+
 }
