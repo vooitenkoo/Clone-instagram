@@ -2,10 +2,11 @@ import React, { useState } from "react";
 
 const AuthForm = ({ onAuth }) => {
     const [formType, setFormType] = useState("login");
-    const [name, setName] = useState("");  // Добавил поле name
+    const [name, setName] = useState("");  // Для регистрации
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         const url = `http://localhost:8082/api/auth/${formType}`;
@@ -21,24 +22,19 @@ const AuthForm = ({ onAuth }) => {
                 body: JSON.stringify(body),
             });
 
-            // Проверяем, что сервер вообще отвечает
-            console.log("Статус ответа:", response.status);
-
             const data = await response.json();
-            console.log("Ответ сервера:", data);
 
             if (data.token) {
                 localStorage.setItem("authToken", data.token);
                 onAuth(data.token);
             } else {
-                alert(`Ошибка: ${data.message || "Токен не получен"}`);
+                alert(`Error: ${data.message || "No token received"}`);
             }
         } catch (error) {
-            console.error("Ошибка запроса:", error);
-            alert("Ошибка подключения к серверу.");
+            console.error("Request error:", error);
+            alert("Connection error.");
         }
     };
-
 
     return (
         <div className="auth-container">

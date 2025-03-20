@@ -14,6 +14,9 @@ public class UserDTO {
     private int followingCount;
     private boolean isFollowing;
 
+    public UserDTO(String username) {
+        this.username = username;
+    }
     public UserDTO(String username, String bio, String profilePicture, int followersCount, int followingCount, boolean isFollowing) {
         this.username = username;
         this.bio = bio;

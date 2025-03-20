@@ -47,6 +47,8 @@ public class User implements UserDetails {
     @NotBlank(message = "Email cannot be empty")
     private String email;
 
+
+
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
@@ -74,7 +76,11 @@ public class User implements UserDetails {
     @JsonIgnore
     private Set<Follow> followers = new HashSet<>();
 
-
+    public List<Chat> getUserChats(List<Chat> allChats) {
+        return allChats.stream()
+                .filter(chat -> chat.getUsers().contains(this))
+                .toList();
+    }
     // 📌 Security
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

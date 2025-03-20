@@ -1,46 +1,70 @@
 package com.example.cloneInstragram.controller;
 
 import com.example.cloneInstragram.dto.MessageDTO;
-import com.example.cloneInstragram.dto.UserDTO;
 import com.example.cloneInstragram.entity.Message;
 import com.example.cloneInstragram.entity.User;
 import com.example.cloneInstragram.services.ChatService;
 import com.example.cloneInstragram.services.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 public class ChatWebSocketController {
+
     private final ChatService chatService;
     private final UserService userService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public ChatWebSocketController(ChatService chatService, UserService userService) {
+    public ChatWebSocketController(ChatService chatService, UserService userService, SimpMessagingTemplate messagingTemplate) {
         this.chatService = chatService;
         this.userService = userService;
+        this.messagingTemplate = messagingTemplate;
     }
 
-    @MessageMapping("/chat/{chatId}") // Отправка сообщения
-    @SendTo("/topic/chat/{chatId}")   // Сообщение отправляется всем подписчикам чата
-    public MessageDTO sendMessage(@AuthenticationPrincipal UserDetails userDetails, Message message) {
-        // Находим отправителя
-        User sender = userService.findByUsername(userDetails.getUsername());
+    @MessageMapping("/chat.send")
+    public void processMessage(@Payload MessageDTO messageDTO) {
+        if (messageDTO.getSender() == null || messageDTO.getContent() == null || messageDTO.getChatId() == null) {
+            throw new IllegalArgumentException("Sender, content, and chatId cannot be null");
+        }
 
-        // Отправляем сообщение через сервис
-        Message savedMessage = chatService.sendMessage(message.getChat().getId(), sender, message.getContent());
+        System.out.println("📥 Received message: " + messageDTO);
 
-        // Создаем DTO для отправителя (отправитель преобразуется в UserDTO)
-        UserDTO senderDTO = userService.getUserDTO(sender, sender);
-        System.out.println("Отправлено сообщение: " + savedMessage.getContent());
-        // Создаём и возвращаем DTO для сообщения
-        return new MessageDTO(
-                savedMessage.getId(),
-                senderDTO, // Используем UserDTO вместо User
-                savedMessage.getContent(),
-                savedMessage.getSentAt()
+        User sender = userService.findByUsername(messageDTO.getSender().getUsername());
+        if (sender == null) {
+            throw new IllegalArgumentException("User not found for username: " + messageDTO.getSender().getUsername());
+        }
+
+        Message savedMessage = chatService.saveMessage(messageDTO.getChatId(), sender, messageDTO.getContent());
+
+        // Отправляем сообщение в правильную очередь
+        messagingTemplate.convertAndSend(
+                "/topic/chat/" + messageDTO.getChatId(),
+                new MessageDTO(
+                        savedMessage.getId(),
+                        userService.getUserDTO(sender, sender),
+                        savedMessage.getContent(),
+                        savedMessage.getSentAt()
+                )
         );
     }
 
+    @GetMapping("/messages/{senderId}/{recipientId}/count")
+    public ResponseEntity<Long> countNewMessages(@PathVariable Long senderId, @PathVariable Long recipientId) {
+        return ResponseEntity.ok(chatService.countNewMessages(senderId, recipientId));
+    }
+
+    @GetMapping("/messages/{senderId}/{recipientId}")
+    public ResponseEntity<?> findChatMessages(@PathVariable Long senderId, @PathVariable Long recipientId) {
+        return ResponseEntity.ok(chatService.findChatMessages(senderId, recipientId));
+    }
+
+    @GetMapping("/messages/{id}")
+    public ResponseEntity<?> findMessage(@PathVariable Long id) {
+        return ResponseEntity.ok(chatService.findById(id));
+    }
 }

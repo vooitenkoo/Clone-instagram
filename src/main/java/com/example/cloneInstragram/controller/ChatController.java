@@ -1,3 +1,4 @@
+/*
 package com.example.cloneInstragram.controller;
 
 import com.example.cloneInstragram.dto.MessageDTO;
@@ -48,3 +49,4 @@ public class ChatController {
         return ResponseEntity.ok(messages);
     }
 }
+*/
