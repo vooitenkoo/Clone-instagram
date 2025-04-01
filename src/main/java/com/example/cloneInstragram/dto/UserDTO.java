@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 public class UserDTO {
+    private Long id;
     private String username;
     private String bio;
     private String profilePicture;
@@ -14,7 +15,7 @@ public class UserDTO {
     private int followingCount;
     private boolean isFollowing;
 
-    public UserDTO(String username) {
+    public UserDTO(Long id, String username, String profilePicture, Object o, Object object) {
         this.username = username;
     }
     public UserDTO(String username, String bio, String profilePicture, int followersCount, int followingCount, boolean isFollowing) {

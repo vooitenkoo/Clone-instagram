@@ -79,8 +79,8 @@ public class CommentService {
         postInteractionRepo.save(interaction);
 
         notificationService.createNotification(
-                post.getUser().getId(),  // Владелец поста (он получает уведомление)
-                user.getId(),  // Кто оставил комментарий
+                post.getUser(),  // Владелец поста (он получает уведомление)
+                user,  // Кто оставил комментарий
                 "COMMENT",
                 user.getUsername() + " commented on your post",
                 postId

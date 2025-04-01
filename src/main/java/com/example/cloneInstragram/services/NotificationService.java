@@ -4,64 +4,66 @@ import com.example.cloneInstragram.dto.NotificationDto;
 import com.example.cloneInstragram.entity.Notification;
 import com.example.cloneInstragram.entity.User;
 import com.example.cloneInstragram.repos.NotificationRepo;
-import com.example.cloneInstragram.repos.UserRepo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class NotificationService {
 
     private final NotificationRepo notificationRepository;
-    private final UserRepo userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public NotificationService(NotificationRepo notificationRepository, UserRepo userRepository) {
+    public NotificationService(NotificationRepo notificationRepository, SimpMessagingTemplate messagingTemplate) {
         this.notificationRepository = notificationRepository;
-        this.userRepository = userRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
-    public List<NotificationDto> getNotificationsForUser(Long userId) {
-        return notificationRepository.findByReceiverId(userId)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-    public NotificationDto createNotification(Long receiverId, Long senderId, String type, String message, Long entityId) {
-        User receiver = userRepository.findById(receiverId)
-                .orElseThrow(() -> new RuntimeException("Receiver not found"));
-        User sender = senderId != null ? userRepository.findById(senderId).orElse(null) : null;
-
+    public void createNotification(User receiver, User sender, String message, String type, Long entityId) {
         Notification notification = new Notification();
         notification.setReceiver(receiver);
         notification.setSender(sender);
-        notification.setType(type);
         notification.setMessage(message);
+        notification.setType(type);
         notification.setEntityId(entityId);
         notification.setCreatedAt(LocalDateTime.now());
+        notification.setRead(false);
+
         notificationRepository.save(notification);
 
-        return convertToDTO(notification);
+        NotificationDto notificationDto = new NotificationDto(
+                notification.getId(),
+                sender.getUsername(),
+                message,
+                type,
+                entityId,
+                notification.getCreatedAt(),
+                false
+        );
+        messagingTemplate.convertAndSend("/topic/notifications/" + receiver.getId(), notificationDto);
     }
 
-    public void markAsRead(Long notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+    public List<NotificationDto> getNotificationsForUser(Long userId) {
+        List<Notification> notifications = notificationRepository.findByReceiverId(userId);
+        return notifications.stream()
+                .map(n -> new NotificationDto(
+                        n.getId(),
+                        n.getSender().getUsername(),
+                        n.getMessage(),
+                        n.getType(),
+                        n.getEntityId(),
+                        n.getCreatedAt(),
+                        n.isRead()
+                ))
+                .toList();
+    }
+
+    public void markAsRead(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Notification not found"));
         notification.setRead(true);
         notificationRepository.save(notification);
-    }
-
-    private NotificationDto convertToDTO(Notification notification) {
-        NotificationDto dto = new NotificationDto();
-        dto.setId(notification.getId());
-        dto.setReceiverId(notification.getReceiver().getId());
-        dto.setSenderId(notification.getSender() != null ? notification.getSender().getId() : null);
-        dto.setType(notification.getType());
-        dto.setMessage(notification.getMessage());
-        dto.setEntityId(notification.getEntityId());
-        dto.setRead(notification.isRead());
-        dto.setCreatedAt(notification.getCreatedAt());
-        return dto;
     }
 }

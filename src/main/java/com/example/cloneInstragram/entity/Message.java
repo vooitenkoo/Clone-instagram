@@ -31,4 +31,6 @@ public class Message {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private LocalDateTime sentAt;
 
+    // Добавляем поле read
+    private boolean read = false; // По умолчанию сообщение не прочитано
 }

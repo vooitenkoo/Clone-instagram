@@ -45,8 +45,8 @@ public class LikeService {
         like.setPost(post);
         likeRepository.save(like);
         notificationService.createNotification(
-                post.getUser().getId(), // Владелец поста (он получит уведомление)
-                user.getId(),           // Кто поставил лайк
+                post.getUser(), // Владелец поста (он получит уведомление)
+                user,           // Кто поставил лайк
                 "LIKE",                 // Тип уведомления
                 user.getUsername() + " liked your post",
                 postId                   // ID поста

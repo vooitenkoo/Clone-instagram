@@ -41,8 +41,8 @@ public class FollowService {
         follow.setFollowing(following);
         followRepo.save(follow);
         notificationService.createNotification(
-                following.getId(),  // Пользователь, на которого подписались
-                follower.getId(),   // Кто подписался
+                following,  // Пользователь, на которого подписались
+                follower,   // Кто подписался
                 "FOLLOW",
                 follower.getUsername() + " started following you",
                 null

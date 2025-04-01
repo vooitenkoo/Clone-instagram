@@ -2,6 +2,7 @@ package com.example.cloneInstragram.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -28,4 +29,6 @@ public class Notification {
     private boolean isRead = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();
+
+
 }

@@ -1,153 +1,126 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Button, message } from "antd";
-import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+import axios from "axios";
 
-const Chat = ({ chatId }) => {
+const Chat = ({ chatId, senderId, recipientId, onMessagesRead }) => {
     const [messages, setMessages] = useState([]);
-    const [text, setText] = useState("");
-    const [currentUser, setCurrentUser] = useState(null);
-    const stompClient = useRef(null);
+    const [newMessage, setNewMessage] = useState("");
+    const [error, setError] = useState(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const stompClientRef = useRef(null);
 
     useEffect(() => {
-        if (!chatId) {
-            console.error("❌ chatId is missing!");
+        if (!chatId || !senderId || !recipientId) {
+            console.error("Missing chat parameters!");
+            setError("Invalid chat parameters");
             return;
         }
 
-        console.log("✅ chatId:", chatId);
-
         const token = localStorage.getItem("authToken");
-        if (token) {
-            const userData = parseJwt(token);
-            setCurrentUser(userData);
-            connect(token);
-        } else {
-            message.error("No authentication token found.");
-        }
-
-        return () => {
-            disconnect();
-        };
-    }, [chatId]);
-
-    const connect = (token) => {
-        const socket = new SockJS("http://localhost:8082/ws");
-
-        stompClient.current = new Client({
+        const socket = new SockJS(`http://localhost:8082/ws?token=${token}`);
+        const client = new Client({
             webSocketFactory: () => socket,
-            connectHeaders: {
-                Authorization: `Bearer ${token}`,
-            },
+            reconnectDelay: 5000,
+            debug: (str) => console.log(str),
             onConnect: () => {
-                console.log("✅ WebSocket connected!");
-                subscribe(chatId);
-            },
-            onWebSocketError: (error) => {
-                console.error("❌ WebSocket error:", error);
+                console.log(`Connected and subscribed to /topic/chat/${chatId}`);
+                setIsConnected(true);
+                client.subscribe(`/topic/chat/${chatId}`, (message) => {
+                    const receivedMessage = JSON.parse(message.body);
+                    setMessages((prev) => {
+                        if (!prev.some((msg) => msg.id === receivedMessage.id)) {
+                            return [...prev, receivedMessage];
+                        }
+                        return prev;
+                    });
+                    onMessagesRead();
+                    // Помечаем сообщения как прочитанные
+                    axios.post(`http://localhost:8082/messages/${chatId}/read`, {}, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }).catch((err) => console.error("Error marking messages as read:", err));
+                });
             },
             onStompError: (frame) => {
-                console.error("❌ STOMP error:", frame.body);
+                console.error("STOMP Error:", frame.headers["message"]);
+                setError("WebSocket connection failed");
+                setIsConnected(false);
             },
-            onDisconnect: () => {
-                console.log("❌ WebSocket disconnected");
+            onWebSocketClose: () => {
+                console.log("WebSocket closed");
+                setIsConnected(false);
             },
         });
 
-        stompClient.current.activate();
-    };
+        client.activate();
+        stompClientRef.current = client;
 
-    const disconnect = () => {
-        if (stompClient.current) {
-            stompClient.current.deactivate();
-        }
-    };
+        const fetchMessages = async () => {
+            try {
+                const response = await axios.get(
+                    `http://localhost:8082/messages/${senderId}/${recipientId}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setMessages(response.data);
+            } catch (err) {
+                console.error("Error fetching messages:", err);
+                setError("Failed to load messages");
+            }
+        };
 
-    const subscribe = (chatId) => {
-        if (!stompClient.current) {
-            console.error("STOMP client is null, cannot subscribe");
-            return;
-        }
+        fetchMessages();
 
-        console.log(`🔗 Subscribing to chat: /topic/chat/${chatId}`);
-
-        stompClient.current.subscribe(
-            `/topic/chat/${chatId}`,
-            (msg) => onMessageReceived(msg),
-            { id: `sub-${chatId}` }
-        );
-    };
-
-    const onMessageReceived = (msg) => {
-        try {
-            const newMessage = JSON.parse(msg.body);
-            console.log("📩 Received message:", newMessage);
-            setMessages((prevMessages) => [...prevMessages, newMessage]);
-            message.info(`New message from ${newMessage.sender.username}`);
-        } catch (error) {
-            console.error("❌ Error parsing message:", error);
-        }
-    };
+        return () => {
+            client.deactivate();
+            console.log("Disconnected WebSocket");
+        };
+    }, [chatId, senderId, recipientId, onMessagesRead]);
 
     const sendMessage = () => {
-        if (!currentUser || !currentUser.sub) {
-            message.error("User not found. Please log in again.");
-            return;
-        }
+        if (!newMessage.trim() || !isConnected) return;
 
-        if (stompClient.current && stompClient.current.connected && text.trim() !== "") {
-            const messageToSend = {
-                sender: {
-                    username: currentUser.sub,
-                },
-                content: text,
-                chatId: chatId,
-            };
+        const client = stompClientRef.current;
+        const message = {
+            chatId,
+            sender: { id: senderId },
+            content: newMessage,
+            timestamp: new Date().toISOString(),
+        };
 
-            console.log("📤 Sending message:", messageToSend);
+        client.publish({
+            destination: "/app/chat.send",
+            body: JSON.stringify(message),
+        });
 
-            stompClient.current.publish({
-                destination: "/app/chat.send",
-                body: JSON.stringify(messageToSend),
-            });
-
-            setText("");
-        } else {
-            message.error("WebSocket not connected yet or message is empty!");
-        }
+        setNewMessage("");
     };
 
-    const parseJwt = (token) => {
-        try {
-            const base64Url = token.split(".")[1];
-            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-            return JSON.parse(atob(base64));
-        } catch (e) {
-            console.error("Failed to parse JWT:", e);
-            return null;
-        }
-    };
+    if (error) return <div>Error: {error}</div>;
 
     return (
         <div>
-            <h1>Chat {chatId}</h1>
-            <div>
-                <ul>
-                    {messages.map((msg, index) => (
-                        <li key={index}>
-                            <strong>{msg.sender.username}: </strong>
-                            {msg.content}
-                        </li>
-                    ))}
-                </ul>
+            <div style={{ height: "300px", overflowY: "auto" }}>
+                {messages.length > 0 ? (
+                    messages.map((msg) => (
+                        <div key={msg.id || msg.timestamp}>
+                            <strong>{msg.sender.id === senderId ? "You" : msg.sender.username || "Unknown"}:</strong> {msg.content}
+                        </div>
+                    ))
+                ) : (
+                    <div>No messages yet.</div>
+                )}
             </div>
             <input
                 type="text"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type a message..."
+                disabled={!isConnected}
             />
-            <Button onClick={sendMessage}>Send</Button>
+            <button onClick={sendMessage} disabled={!isConnected}>
+                Send
+            </button>
+            {!isConnected && <p>Connecting to server...</p>}
         </div>
     );
 };

@@ -1,5 +1,7 @@
 package com.example.cloneInstragram.services;
 
+
+import com.example.cloneInstragram.dto.SimpleUserDTO;
 import com.example.cloneInstragram.dto.UserDTO;
 import com.example.cloneInstragram.dto.UserRegisterDTO;
 import com.example.cloneInstragram.entity.Role;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -64,8 +67,25 @@ public class UserService {
                 isFollowing
         );
     }
-
-
+    public User findById(Long id) {
+        return userRepo.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User with ID " + id + " not found"));
+    }
+    public List<UserDTO> getAllUsersExceptCurrent(Long currentUserId) {
+        return userRepo.findAll().stream()
+                .filter(user -> !user.getId().equals(currentUserId))
+                .map(user -> new UserDTO(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getProfilePicture(),
+                        null,
+                        null
+                ))
+                .collect(Collectors.toList());
+    }
+    public SimpleUserDTO getSimpleUserDTO(User user) {
+        return new SimpleUserDTO(user.getUsername());
+    }
     public void updateUser(User user, String username, String bio, String profilePicture, String password) {
         user.setUsername(username);
         user.setBio(bio);

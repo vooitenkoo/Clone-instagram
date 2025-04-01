@@ -7,7 +7,7 @@ const ChatPage = () => {
     return (
         <div>
             <h1>Chat Page</h1>
-            <button onClick={() => setChatId(2)}>Switch to Chat 2</button>  {/* Меняем чат */}
+            <button onClick={() => setChatId(1)}>Switch to Chat 2</button>  {/* Меняем чат */}
             <Chat chatId={chatId} />  {/* Передаем chatId */}
         </div>
     );
