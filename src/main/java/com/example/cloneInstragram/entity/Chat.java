@@ -4,11 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cache;
+
 import java.util.Set;
 
 @Entity
 @Data
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Chat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

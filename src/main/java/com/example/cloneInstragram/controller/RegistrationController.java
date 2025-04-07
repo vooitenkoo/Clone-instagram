@@ -8,19 +8,19 @@ import com.example.cloneInstragram.services.UserService;
 import com.example.cloneInstragram.utils.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
-
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:3000")
 public class RegistrationController {
     private final JwtUtil jwtUtil;
-
     private final UserService userService;
+
     @Autowired
     public RegistrationController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
@@ -28,10 +28,22 @@ public class RegistrationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody @Valid UserRegisterDTO userDTO) {
-        userService.register(userDTO);
-        return ResponseEntity.ok("User registered successfully!");
+    public ResponseEntity<?> registerUser(@RequestBody UserRegisterDTO userDTO) {
+        try {
+            userService.register(userDTO);
+            return ResponseEntity.ok(Map.of("message", "User registered successfully!"));
+        } catch (IllegalArgumentException e) {
+            // Ошибка: username занят
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            // Общая ошибка
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Registration failed: " + e.getMessage()));
+        }
     }
+
+
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody UserLoginDTO userDTO) {
@@ -41,8 +53,32 @@ public class RegistrationController {
             return ResponseEntity.status(401).body("Invalid username or password");
         }
 
-        String token = jwtUtil.generateToken(userDTO.getUsername());
+        String accessToken = jwtUtil.generateAccessToken(userDTO.getUsername());
+        String refreshToken = jwtUtil.generateRefreshToken(userDTO.getUsername());
 
-        return ResponseEntity.ok(Map.of("token", token));
+        return ResponseEntity.ok(Map.of("accessToken", accessToken, "refreshToken", refreshToken));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+
+        if (refreshToken == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Refresh token is required"));
+        }
+
+        try {
+            String username = jwtUtil.extractUsername(refreshToken);
+            Optional<User> user = Optional.ofNullable(userService.findByUsername(username));
+
+            if (user.isPresent() && jwtUtil.validateToken(refreshToken, username)) {
+                String newAccessToken = jwtUtil.generateAccessToken(username);
+                return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
     }
 }

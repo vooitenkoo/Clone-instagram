@@ -15,13 +15,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
-
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class User implements UserDetails {
 
     @Id
@@ -48,7 +46,7 @@ public class User implements UserDetails {
     @NotBlank(message = "Email cannot be empty")
     private String email;
 
-    @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
+    @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -91,6 +89,16 @@ public class User implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return username; // Возвращаем имя пользователя
     }
 
     @Override

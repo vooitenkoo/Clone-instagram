@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 @Service
 public class UserService {
 
@@ -32,8 +33,13 @@ public class UserService {
 
 
     public void register(UserRegisterDTO userDTO) {
+        Optional<User> existingUser = userRepo.findByUsername(userDTO.getUsername());
+        if (existingUser.isPresent()) {
+            throw new IllegalArgumentException("Username is already taken");
+        }
         User user = new User();
         user.setName(userDTO.getName());
+
         user.setUsername(userDTO.getUsername());
         user.setEmail(userDTO.getEmail());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
@@ -46,12 +52,6 @@ public class UserService {
     public Optional<User> findById(Integer id) {
         return userRepo.findById(Long.valueOf(id));
     }
-
-    public User findByUsername(String username) {
-        return userRepo.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-    }
-
 
     public UserDTO getUserDTO(User user, User currentUser) {
         int followersCount = followRepo.countByFollowing(user);  // Получаем количество подписчиков
@@ -83,9 +83,15 @@ public class UserService {
                 ))
                 .collect(Collectors.toList());
     }
+    public User findByUsername(String username) {
+        return userRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
     public SimpleUserDTO getSimpleUserDTO(User user) {
         return new SimpleUserDTO(user.getUsername());
     }
+
     public void updateUser(User user, String username, String bio, String profilePicture, String password) {
         user.setUsername(username);
         user.setBio(bio);

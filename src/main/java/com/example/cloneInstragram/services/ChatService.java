@@ -3,13 +3,17 @@ package com.example.cloneInstragram.services;
 import com.example.cloneInstragram.dto.ChatDTO;
 import com.example.cloneInstragram.dto.ChatUpdateDto;
 import com.example.cloneInstragram.dto.MessageDTO;
+import com.example.cloneInstragram.dto.SimpleUserDTO;
 import com.example.cloneInstragram.entity.Chat;
 import com.example.cloneInstragram.entity.Message;
 import com.example.cloneInstragram.entity.User;
 import com.example.cloneInstragram.repos.ChatRepo;
 import com.example.cloneInstragram.repos.MessageRepo;
 import com.example.cloneInstragram.repos.UserRepo;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +27,15 @@ public class ChatService {
     private final ChatRepo chatRepository;
     private final MessageRepo messageRepository;
     private final UserRepo userRepo;
-    private final UserService userService;
+
     private final NotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
 
     public ChatService(ChatRepo chatRepository, MessageRepo messageRepository, UserRepo userRepo,
-                       UserService userService, NotificationService notificationService, SimpMessagingTemplate messagingTemplate) {
+                       NotificationService notificationService, SimpMessagingTemplate messagingTemplate) {
         this.chatRepository = chatRepository;
         this.messageRepository = messageRepository;
         this.userRepo = userRepo;
-        this.userService = userService;
         this.notificationService = notificationService;
         this.messagingTemplate = messagingTemplate;
     }
@@ -62,16 +65,15 @@ public class ChatService {
 
         return chatRepository.save(chat);
     }
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ChatDTO> getUserChats(Long userId) {
-        List<Chat> chats = chatRepository.findByUsersId(userId);
-
-        // Загружаем последние сообщения для всех чатов одним запросом
+        List<Chat> chats = chatRepository.findByUsersIdWithUsers(userId);
         List<Long> chatIds = chats.stream().map(Chat::getId).toList();
+
+        // Последние сообщения и непрочитанные одним запросом
         List<Message> lastMessages = messageRepository.findLastMessagesForChats(chatIds);
         Map<Long, Message> lastMessageMap = lastMessages.stream()
                 .collect(Collectors.toMap(m -> m.getChat().getId(), m -> m));
-        // Загружаем количество непрочитанных сообщений одним запросом
         Map<Long, Long> unreadMessagesCountMap = messageRepository.countUnreadMessagesForChats(chatIds, userId);
 
         return chats.stream()
@@ -80,9 +82,8 @@ public class ChatService {
                             .filter(u -> !u.getId().equals(userId))
                             .findFirst()
                             .orElse(null);
-
                     Message lastMessage = lastMessageMap.get(chat.getId());
-                    Long unreadMessagesCount = unreadMessagesCountMap.getOrDefault(chat.getId(), 0L);
+                    Long unreadCount = unreadMessagesCountMap.getOrDefault(chat.getId(), 0L);
 
                     return new ChatDTO(
                             chat.getId(),
@@ -90,16 +91,8 @@ public class ChatService {
                             otherUser != null ? otherUser.getProfilePicture() : null,
                             lastMessage != null ? lastMessage.getContent() : null,
                             lastMessage != null ? lastMessage.getSentAt() : null,
-                            unreadMessagesCount
+                            unreadCount
                     );
-                })
-                .sorted((chat1, chat2) -> {
-                    LocalDateTime time1 = chat1.getLastMessageSentAt();
-                    LocalDateTime time2 = chat2.getLastMessageSentAt();
-                    if (time1 == null && time2 == null) return 0;
-                    if (time1 == null) return 1;
-                    if (time2 == null) return -1;
-                    return time2.compareTo(time1);
                 })
                 .toList();
     }
@@ -112,18 +105,14 @@ public class ChatService {
     }
     @Transactional
     public void markMessagesAsRead(Long chatId, Long userId) {
-        List<Message> unreadMessages = messageRepository.findUnreadMessagesByChatAndSenderNot(chatId, userId);
-        for (Message message : unreadMessages) {
-            message.setRead(true);
-            messageRepository.save(message);
+        int updated = messageRepository.markMessagesAsReadByChatAndSenderNot(chatId, userId);
+        if (updated > 0) {
+            Long unreadCount = messageRepository.countByChatIdAndSenderNotAndReadFalse(chatId, userId);
+            messagingTemplate.convertAndSend(
+                    "/topic/chats/" + userId,
+                    new ChatUpdateDto(chatId, unreadCount)
+            );
         }
-
-        // Обновляем счётчик непрочитанных сообщений через WebSocket
-        Long unreadCount = messageRepository.countByChatIdAndSenderNotAndReadFalse(chatId, userId);
-        messagingTemplate.convertAndSend(
-                "/topic/chats/" + userId,
-                new ChatUpdateDto(chatId, unreadCount)
-        );
     }
     @Transactional
     public Message saveMessage(Long chatId, User sender, String content) {
@@ -166,41 +155,26 @@ public class ChatService {
         }
         return messageRepository.countUnreadMessagesBySenderAndChat(chat.get().getId(), senderId);
     }
+    @Transactional(readOnly = true)
     public List<MessageDTO> findChatMessages(Long senderId, Long recipientId, int page, int size) {
-        System.out.println("Finding chat between users: senderId=" + senderId + ", recipientId=" + recipientId);
+        Chat chat = chatRepository.findPrivateChatBetweenUsers(senderId, recipientId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat not found between users " + senderId + " and " + recipientId));
 
-        // Пробуем найти чат в обоих направлениях
-        Optional<Chat> chatOptional = chatRepository.findPrivateChatBetweenUsers(senderId, recipientId);
-        if (chatOptional.isEmpty()) {
-            System.out.println("Chat not found in direction senderId -> recipientId, trying recipientId -> senderId");
-            chatOptional = chatRepository.findPrivateChatBetweenUsers(recipientId, senderId);
-        }
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("sentAt").ascending());
+        List<Message> messages = messageRepository.findByChatId(chat.getId(), pageRequest);
 
-        if (chatOptional.isEmpty()) {
-            System.out.println("Chat still not found, checking all chats for users...");
-            // Дополнительная проверка: ищем все чаты, где есть оба пользователя
-            List<Chat> allChats = chatRepository.findAll();
-            chatOptional = allChats.stream()
-                    .filter(chat -> chat.getType().equals("PRIVATE"))
-                    .filter(chat -> {
-                        List<Long> userIds = chat.getUsers().stream().map(User::getId).toList();
-                        return userIds.contains(senderId) && userIds.contains(recipientId) && userIds.size() == 2;
-                    })
-                    .findFirst();
-        }
-
-        Chat chat = chatOptional.orElseThrow(() -> new IllegalArgumentException("Chat not found between users " + senderId + " and " + recipientId));
-        System.out.println("Found chat: " + chat.getId());
-
-        // Загружаем сообщения из чата
-        List<Message> messages = messageRepository.findByChatId(chat.getId(), PageRequest.of(page, size));
-        System.out.println("Found " + messages.size() + " messages in chat " + chat.getId());
+        // Подтягиваем пользователей чата один раз
+        Map<Long, User> userMap = chat.getUsers().stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
 
         return messages.stream()
                 .map(message -> {
+                    User sender = userMap.get(message.getSender().getId());
+                    SimpleUserDTO senderDTO = new SimpleUserDTO(sender.getUsername());
+
                     MessageDTO messageDTO = new MessageDTO(
                             message.getId(),
-                            userService.getSimpleUserDTO(message.getSender()),
+                            senderDTO,
                             message.getContent(),
                             message.getSentAt(),
                             message.isRead()
@@ -208,7 +182,12 @@ public class ChatService {
                     messageDTO.setChatId(chat.getId());
                     return messageDTO;
                 })
-                .collect(Collectors.toList());
+                .toList();
+    }
+    @Transactional
+    public Chat getChatWithUsers(Long chatId) {
+        return chatRepository.findByIdWithUsers(chatId)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
     }
     public Message findById(Long id) {
         return messageRepository.findById(id)

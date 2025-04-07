@@ -6,10 +6,8 @@ import com.example.cloneInstragram.dto.UserDTO;
 import com.example.cloneInstragram.entity.Chat;
 import com.example.cloneInstragram.entity.Message;
 import com.example.cloneInstragram.entity.User;
-import com.example.cloneInstragram.exception.ChatNotFoundException;
 import com.example.cloneInstragram.services.ChatService;
 import com.example.cloneInstragram.services.UserService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -44,9 +42,9 @@ public class ChatWebSocketController {
         System.out.println("📥 Received message: " + messageDTO);
 
         User sender = userService.findById(messageDTO.getSender().getId());
-        // Проверяем, что отправитель участвует в чате
+
         List<User> chatUsers = chatService.getUsersInChat(messageDTO.getChatId());
-        if (!chatUsers.stream().anyMatch(u -> u.getId().equals(sender.getId()))) {
+        if (chatUsers.stream().noneMatch(u -> u.getId().equals(sender.getId()))) {
             throw new SecurityException("User is not a participant of this chat");
         }
 
@@ -56,7 +54,7 @@ public class ChatWebSocketController {
                 savedMessage.getId(),
                 userService.getSimpleUserDTO(sender),
                 savedMessage.getContent(),
-                savedMessage.getSentAt(), // Преобразуем LocalDateTime в String
+                savedMessage.getSentAt(),
                 savedMessage.isRead()
         );
         responseDTO.setChatId(messageDTO.getChatId());
@@ -113,7 +111,7 @@ public class ChatWebSocketController {
             @PathVariable Long senderId,
             @PathVariable Long recipientId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "100") int size) {
         return ResponseEntity.ok(chatService.findChatMessages(senderId, recipientId, page, size));
     }
 
