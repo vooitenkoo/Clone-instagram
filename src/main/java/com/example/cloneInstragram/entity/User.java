@@ -1,6 +1,7 @@
 package com.example.cloneInstragram.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -15,11 +16,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
+
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
+@JsonIgnoreProperties({"enabled", "accountNonExpired", "credentialsNonExpired", "accountNonLocked", "authorities"}) // Игнорируем поля UserDetails
 public class User implements UserDetails {
 
     @Id
@@ -50,6 +53,7 @@ public class User implements UserDetails {
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnore
     private Set<Role> roles;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -85,7 +89,6 @@ public class User implements UserDetails {
                 .toList();
     }
 
-    // 📌 Security
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles;
@@ -98,7 +101,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return username; // Возвращаем имя пользователя
+        return username;
     }
 
     @Override
@@ -121,7 +124,6 @@ public class User implements UserDetails {
         return true;
     }
 
-    // Переопределяем toString, чтобы исключить ленивые коллекции
     @Override
     public String toString() {
         return "User{id=" + id + ", username='" + username + "', email='" + email + "'}";

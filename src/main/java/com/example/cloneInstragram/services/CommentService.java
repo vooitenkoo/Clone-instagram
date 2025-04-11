@@ -1,15 +1,12 @@
 package com.example.cloneInstragram.services;
 
 import com.example.cloneInstragram.dto.CommentDto;
-import com.example.cloneInstragram.dto.PostDto;
 import com.example.cloneInstragram.entity.Comment;
 import com.example.cloneInstragram.entity.Post;
 import com.example.cloneInstragram.entity.PostInteraction;
 import com.example.cloneInstragram.entity.User;
 import com.example.cloneInstragram.repos.CommentRepo;
-
 import com.example.cloneInstragram.repos.PostInteractionRepo;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;

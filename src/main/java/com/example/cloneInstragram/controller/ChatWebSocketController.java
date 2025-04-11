@@ -17,9 +17,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @Controller
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
+@CrossOrigin(origins = "http://localhost:3001", allowCredentials = "true")
 public class ChatWebSocketController {
 
     private final ChatService chatService;
@@ -41,18 +42,18 @@ public class ChatWebSocketController {
 
         System.out.println("📥 Received message: " + messageDTO);
 
-        User sender = userService.findById(messageDTO.getSender().getId());
+        Optional<User> sender = userService.findById(messageDTO.getSender().getId());
 
         List<User> chatUsers = chatService.getUsersInChat(messageDTO.getChatId());
-        if (chatUsers.stream().noneMatch(u -> u.getId().equals(sender.getId()))) {
+        if (chatUsers.stream().noneMatch(u -> u.getId().equals(sender.get().getId()))) {
             throw new SecurityException("User is not a participant of this chat");
         }
 
-        Message savedMessage = chatService.saveMessage(messageDTO.getChatId(), sender, messageDTO.getContent());
+        Message savedMessage = chatService.saveMessage(messageDTO.getChatId(), sender.orElse(null), messageDTO.getContent());
 
         MessageDTO responseDTO = new MessageDTO(
                 savedMessage.getId(),
-                userService.getSimpleUserDTO(sender),
+                userService.getSimpleUserDTO(sender.orElse(null)),
                 savedMessage.getContent(),
                 savedMessage.getSentAt(),
                 savedMessage.isRead()
@@ -80,7 +81,7 @@ public class ChatWebSocketController {
     @GetMapping("/users/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId, Authentication authentication) {
         User currentUser = (User) authentication.getPrincipal();
-        User user = userService.findById(Math.toIntExact(userId))
+        User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         UserDTO userDTO = userService.getUserDTO(user, currentUser);
         return ResponseEntity.ok(userDTO);

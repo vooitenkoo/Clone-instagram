@@ -3,6 +3,7 @@ package com.example.cloneInstragram.repos;
 import com.example.cloneInstragram.entity.Chat;
 import com.example.cloneInstragram.entity.User;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,8 +20,13 @@ public interface ChatRepo extends JpaRepository<Chat, Long> {
             "EXISTS (SELECT 1 FROM c.users u2 WHERE u2.id = :recipientId) AND " +
             "(SELECT COUNT(*) FROM c.users) = 2")
     Optional<Chat> findChatBetweenUsers(@Param("senderId") Long senderId, @Param("recipientId") Long recipientId);
+
     @Query("SELECT c FROM Chat c LEFT JOIN FETCH c.users u LEFT JOIN FETCH u.roles WHERE c.id = :id")
     Optional<Chat> findByIdWithUsers(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"users", "users.roles"})
+    Optional<Chat> findById(@Param("id") Long id);
+
 
     @Query("SELECT c FROM Chat c " +
             "JOIN FETCH c.users u " +

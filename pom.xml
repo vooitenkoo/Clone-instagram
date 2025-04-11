@@ -39,7 +39,6 @@
             <scope>runtime</scope>
         </dependency>
 
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
@@ -48,12 +47,12 @@
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>8.0.0.Final</version> <!-- или последняя версия -->
+            <version>8.0.0.Final</version>
         </dependency>
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>3.0.2</version> <!-- или последняя версия -->
+            <version>3.0.2</version>
         </dependency>
 
         <dependency>
@@ -62,7 +61,6 @@
             <version>6.2.13.Final</version>
         </dependency>
 
-        <!-- EhCache 3.x -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-messaging</artifactId>
@@ -74,13 +72,20 @@
             <version>6.4.4</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
 
-
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.15.3</version> <!-- Ensure this version matches the Jackson version you are using -->
+            <version>2.15.3</version>
         </dependency>
 
         <dependency>
@@ -91,7 +96,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>
-
 
         <dependency>
             <groupId>io.minio</groupId>
@@ -105,12 +109,6 @@
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.15.3</version>
-        </dependency>
-
 
         <!-- Database -->
         <dependency>
@@ -131,19 +129,13 @@
             <scope>runtime</scope>
         </dependency>
 
-
-
-        <!-- Spring Boot Starter Thymeleaf (для работы с HTML-шаблонами) -->
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-
     </dependencies>
 
     <properties>
-        <!-- Используем Java 17 -->
         <java.version>17</java.version>
     </properties>
 
@@ -155,5 +147,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

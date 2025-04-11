@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 @Repository
 public interface PostRepo extends JpaRepository<Post, Long> {
+
     Page<Post> findByUserId(Integer userId, Pageable pageable);
 
     List<Post> findByUserIdIn(List<Long> followedUserIds);

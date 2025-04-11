@@ -12,10 +12,14 @@ import java.util.Set;
 
 @Repository
 public interface UserRepo extends JpaRepository<User,Long> {
+
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.username = :username")
     Optional<User> findByUsername(@Param("username") String username);
-   Optional<User> findById(Long id);
+
+    Optional<User> findById(Long id);
+
     List<User> findByUsernameContainingIgnoreCase(String username);
+
     List<User> findAllById(Iterable<Long> ids);
 
 }

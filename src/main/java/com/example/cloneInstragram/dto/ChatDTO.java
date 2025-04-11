@@ -1,12 +1,22 @@
 package com.example.cloneInstragram.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+@Setter
+@Getter
+@NoArgsConstructor
 public class ChatDTO {
+    // Геттеры и сеттеры
     private Long id;
     private String otherUserUsername;
     private String otherUserProfilePicture;
     private String lastMessage;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastMessageSentAt;
     private Long unreadMessagesCount;
 
@@ -19,52 +29,4 @@ public class ChatDTO {
         this.unreadMessagesCount = unreadMessagesCount;
     }
 
-    // Геттеры и сеттеры
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getOtherUserUsername() {
-        return otherUserUsername;
-    }
-
-    public void setOtherUserUsername(String otherUserUsername) {
-        this.otherUserUsername = otherUserUsername;
-    }
-
-    public String getOtherUserProfilePicture() {
-        return otherUserProfilePicture;
-    }
-
-    public void setOtherUserProfilePicture(String otherUserProfilePicture) {
-        this.otherUserProfilePicture = otherUserProfilePicture;
-    }
-
-    public String getLastMessage() {
-        return lastMessage;
-    }
-
-    public void setLastMessage(String lastMessage) {
-        this.lastMessage = lastMessage;
-    }
-
-    public LocalDateTime getLastMessageSentAt() {
-        return lastMessageSentAt;
-    }
-
-    public void setLastMessageSentAt(LocalDateTime lastMessageSentAt) {
-        this.lastMessageSentAt = lastMessageSentAt;
-    }
-
-    public Long getUnreadMessagesCount() {
-        return unreadMessagesCount;
-    }
-
-    public void setUnreadMessagesCount(Long unreadMessagesCount) {
-        this.unreadMessagesCount = unreadMessagesCount;
-    }
 }

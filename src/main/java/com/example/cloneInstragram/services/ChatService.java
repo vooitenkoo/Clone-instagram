@@ -65,6 +65,7 @@ public class ChatService {
 
         return chatRepository.save(chat);
     }
+    @Cacheable(value = "userChats", key = "#userId")
     @Transactional(readOnly = true)
     public List<ChatDTO> getUserChats(Long userId) {
         List<Chat> chats = chatRepository.findByUsersIdWithUsers(userId);
@@ -116,7 +117,7 @@ public class ChatService {
     }
     @Transactional
     public Message saveMessage(Long chatId, User sender, String content) {
-        Chat chat = chatRepository.findByIdWithUsers(chatId)
+        Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
 
         Message message = new Message();
@@ -186,7 +187,7 @@ public class ChatService {
     }
     @Transactional
     public Chat getChatWithUsers(Long chatId) {
-        return chatRepository.findByIdWithUsers(chatId)
+        return chatRepository.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
     }
     public Message findById(Long id) {

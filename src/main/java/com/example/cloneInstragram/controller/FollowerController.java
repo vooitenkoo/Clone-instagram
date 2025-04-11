@@ -53,8 +53,6 @@ public class FollowerController {
     }
 
 
-
-
     @GetMapping("/followers")
     public ResponseEntity<List<UserDTO>> getFollowers(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.findByUsername(userDetails.getUsername());
@@ -79,7 +77,7 @@ public class FollowerController {
     @GetMapping("/{userId}/followers")
     public ResponseEntity<List<UserDTO>> getFollowersByUserId(@PathVariable Long userId) {
         // Получаем пользователя по ID
-        User user = userService.findById(Math.toIntExact(userId)).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userService.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
         // Получаем подписчиков этого пользователя
         List<UserDTO> followersDTO = followService.getFollowers(user.getId());
@@ -91,7 +89,7 @@ public class FollowerController {
     @GetMapping("/{userId}/following")
     public ResponseEntity<List<UserDTO>> getFollowingByUserId(@PathVariable Long userId) {
         // Получаем пользователя по ID
-        User user = userService.findById(Math.toIntExact(userId)).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userService.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
         // Получаем подписки этого пользователя
         List<UserDTO> followingDTO = followService.getFollowing(user.getId());

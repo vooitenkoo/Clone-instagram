@@ -1,6 +1,5 @@
 package com.example.cloneInstragram.controller;
 
-import com.example.cloneInstragram.dto.UserDTO;
 import com.example.cloneInstragram.dto.UserLoginDTO;
 import com.example.cloneInstragram.dto.UserRegisterDTO;
 import com.example.cloneInstragram.entity.User;
@@ -10,13 +9,15 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3001")
 public class RegistrationController {
     private final JwtUtil jwtUtil;
     private final UserService userService;
@@ -28,7 +29,12 @@ public class RegistrationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserRegisterDTO userDTO) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegisterDTO userDTO, BindingResult bindingResult) {
+        // Проверяем ошибки валидации
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
+
         try {
             userService.register(userDTO);
             return ResponseEntity.ok(Map.of("message", "User registered successfully!"));
@@ -43,14 +49,17 @@ public class RegistrationController {
         }
     }
 
-
-
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody UserLoginDTO userDTO) {
+    public ResponseEntity<?> loginUser(@Valid @RequestBody UserLoginDTO userDTO, BindingResult bindingResult) {
+        // Проверяем ошибки валидации
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
+
         Optional<User> userOptional = Optional.ofNullable(userService.findByUsername(userDTO.getUsername()));
 
         if (userOptional.isEmpty() || !userService.passwordMatches(userDTO.getPassword(), userOptional.get())) {
-            return ResponseEntity.status(401).body("Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
 
         String accessToken = jwtUtil.generateAccessToken(userDTO.getUsername());
@@ -63,7 +72,7 @@ public class RegistrationController {
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
 
-        if (refreshToken == null) {
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Refresh token is required"));
         }
 

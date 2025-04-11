@@ -1,7 +1,11 @@
 package com.example.cloneInstragram.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class SimpleUserDTO {
     private Long id;
 
@@ -11,20 +15,6 @@ public class SimpleUserDTO {
     public SimpleUserDTO() {}
 
     public SimpleUserDTO(String username) {
-        this.username = username;
-    }
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
         this.username = username;
     }
 

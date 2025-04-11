@@ -1,5 +1,6 @@
 package com.example.cloneInstragram.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -24,5 +25,6 @@ public class Follow {
     @JoinColumn(name = "following_id")
     private User following; // На кого подписались
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private LocalDateTime followedAt = LocalDateTime.now();
 }
