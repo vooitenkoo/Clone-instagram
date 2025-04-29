@@ -32,6 +32,7 @@ public interface ChatRepo extends JpaRepository<Chat, Long> {
             "WHERE :userId IN (SELECT u2.id FROM c.users u2) " +
             "ORDER BY (SELECT MAX(m.sentAt) FROM Message m WHERE m.chat.id = c.id) DESC NULLS LAST")
     List<Chat> findByUsersIdWithUsers(@Param("userId") Long userId);
+
     @Query("SELECT c FROM Chat c " +
             "JOIN FETCH c.users u " +
             "LEFT JOIN FETCH u.roles " +

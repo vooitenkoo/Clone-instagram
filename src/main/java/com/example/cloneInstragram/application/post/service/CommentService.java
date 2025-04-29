@@ -1,6 +1,7 @@
 package com.example.cloneInstragram.application.post.service;
 
 import com.example.cloneInstragram.application.post.dto.CommentDto;
+import com.example.cloneInstragram.application.post.mapper.CommentMapper;
 import com.example.cloneInstragram.domain.post.model.Comment;
 import com.example.cloneInstragram.domain.post.model.Post;
 import com.example.cloneInstragram.domain.post.model.PostInteraction;
@@ -22,7 +23,6 @@ public class CommentService {
     private final NotificationService notificationService;
     private final PostInteractionRepo postInteractionRepo;
 
-
     public CommentService(CommentRepo commentRepo, PostService postService, NotificationService notificationService, PostInteractionRepo postInteractionRepo) {
         this.commentRepo = commentRepo;
         this.postService = postService;
@@ -34,24 +34,17 @@ public class CommentService {
         return commentRepo.findAll();
     }
 
-    public List<CommentDto> getCommentsByPost(Long postId ) {
+    public List<CommentDto> getCommentsByPost(Long postId) {
         Post post = postService.getPostEntityById(postId);
         List<Comment> comments = commentRepo.findByPostIdOrderByCreatedAtDesc(post.getId());
-        if(comments.isEmpty()) {
+        if (comments.isEmpty()) {
             return Collections.emptyList();
         }
-        return comments.stream().map(this::toCommentDto).collect((Collectors.toList()));
+        return comments.stream()
+                .map(CommentMapper::toCommentDto)
+                .collect(Collectors.toList());
     }
 
-    private CommentDto toCommentDto(Comment comment) {
-        return new CommentDto(
-                comment.getId(),
-                comment.getText(),
-                comment.getUser().getUsername(),
-                comment.getCreatedAt()
-
-        );
-    }
     public void deleteComment(Long commentId) {
         if (!commentRepo.existsById(commentId)) {
             throw new RuntimeException("Comment not found");
@@ -62,12 +55,14 @@ public class CommentService {
     public CommentDto createComment(User user, Long postId, String text) {
         Post post = postService.getPostEntityById(postId);
 
-        Comment comment = new Comment();
+        // Используем маппер для создания Comment из DTO
+        CommentDto commentDto = new CommentDto(0L, text, user.getUsername(), null);
+        Comment comment = CommentMapper.toComment(commentDto);
         comment.setUser(user);
         comment.setPost(post);
-        comment.setText(text);
-        commentRepo.save(comment);
+        // createdAt уже устанавливается в сущности Comment по умолчанию
 
+        Comment savedComment = commentRepo.save(comment);
 
         PostInteraction interaction = new PostInteraction();
         interaction.setUser(user);
@@ -82,7 +77,7 @@ public class CommentService {
                 user.getUsername() + " commented on your post",
                 postId
         );
-        return toCommentDto(comment);
-    }
 
+        return CommentMapper.toCommentDto(savedComment);
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.cloneInstragram.application.user.service;
 
 import com.example.cloneInstragram.application.user.dto.NotificationDto;
+import com.example.cloneInstragram.application.user.mapper.NotificationMapper;
 import com.example.cloneInstragram.domain.user.model.Notification;
 import com.example.cloneInstragram.domain.user.model.User;
 import com.example.cloneInstragram.domain.user.repository.NotificationRepo;
@@ -31,32 +32,16 @@ public class NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
         notification.setRead(false);
 
-        notificationRepository.save(notification);
+        Notification savedNotification = notificationRepository.save(notification);
 
-        NotificationDto notificationDto = new NotificationDto(
-                notification.getId(),
-                sender.getUsername(),
-                message,
-                type,
-                entityId,
-                notification.getCreatedAt(),
-                false
-        );
+        NotificationDto notificationDto = NotificationMapper.toNotificationDto(savedNotification);
         messagingTemplate.convertAndSend("/topic/notifications/" + receiver.getId(), notificationDto);
     }
 
     public List<NotificationDto> getNotificationsForUser(Long userId) {
         List<Notification> notifications = notificationRepository.findByReceiverId(userId);
         return notifications.stream()
-                .map(n -> new NotificationDto(
-                        n.getId(),
-                        n.getSender().getUsername(),
-                        n.getMessage(),
-                        n.getType(),
-                        n.getEntityId(),
-                        n.getCreatedAt(),
-                        n.isRead()
-                ))
+                .map(NotificationMapper::toNotificationDto)
                 .toList();
     }
 

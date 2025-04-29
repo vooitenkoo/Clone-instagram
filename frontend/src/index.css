@@ -1,13 +1,52 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #fafafa;
+  margin: 0;
+  padding: 0;
+}
+
+.dark body {
+  background-color: #000;
+  color: #fff;
+}
+
+.dark .bg-white {
+  background-color: #1a1a1a;
+}
+
+.dark .bg-insta-gray {
+  background-color: #000;
+}
+
+.dark .text-insta-dark {
+  color: #e5e5e5;
+}
+
+.dark .border-gray-200 {
+  border-color: #444;
+}
+
+.insta-button {
+  @apply bg-insta-blue text-white font-semibold rounded-lg px-4 py-2 hover:bg-blue-700 transition;
+}
+
+.insta-input {
+  @apply border border-gray-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-insta-blue dark:bg-gray-800 dark:border-gray-600 dark:text-white;
+}
+
+.insta-card {
+  @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
 }

@@ -3,6 +3,7 @@ package com.example.cloneInstragram.application.user.service;
 import com.example.cloneInstragram.application.user.dto.SimpleUserDTO;
 import com.example.cloneInstragram.application.user.dto.UserDTO;
 import com.example.cloneInstragram.application.user.dto.UserRegisterDTO;
+import com.example.cloneInstragram.application.user.mapper.UserMapper;
 import com.example.cloneInstragram.domain.user.model.Role;
 import com.example.cloneInstragram.domain.user.model.User;
 import com.example.cloneInstragram.domain.user.repository.FollowRepo;
@@ -39,11 +40,8 @@ public class UserService {
         if (existingUser.isPresent()) {
             throw new IllegalArgumentException("Username is already taken");
         }
-        User user = new User();
-        user.setName(userDTO.getName());
-        user.setUsername(userDTO.getUsername());
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        User user = UserMapper.toUser(userDTO);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRoles(Set.of(Role.USER));
         userRepo.save(user);
     }
@@ -56,39 +54,28 @@ public class UserService {
     @Cacheable(value = "usersById", key = "#id")
     public Optional<User> findById(Long id) {
         Optional<User> userOptional = userRepo.findById(id);
-        userOptional.ifPresent(user -> Hibernate.initialize(user.getRoles())); // Инициализируем roles
+        userOptional.ifPresent(user -> Hibernate.initialize(user.getRoles()));
         return userOptional;
     }
 
     @Transactional
     public UserDTO getUserDTO(User user, User currentUser) {
-        int followersCount = followRepo.countByFollowing(user);
-        int followingCount = followRepo.countByFollower(user);
         boolean isFollowing = followRepo.existsByFollowerAndFollowing(currentUser, user);
-
-        return new UserDTO(
-                user.getUsername(),
-                user.getBio(),
-                user.getProfilePicture(),
-                followersCount,
-                followingCount,
-                isFollowing
-        );
+        return UserMapper.toUserDto(user, isFollowing);
     }
-
 
     @Transactional
     @Cacheable(value = "users", key = "#username")
     public User findByUsername(String username) {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Hibernate.initialize(user.getRoles()); // Инициализируем roles
+        Hibernate.initialize(user.getRoles());
         return user;
     }
 
     @Transactional
     public SimpleUserDTO getSimpleUserDTO(User user) {
-        return new SimpleUserDTO(user.getUsername());
+        return UserMapper.toSimpleDto(user);
     }
 
     @Transactional
@@ -110,7 +97,7 @@ public class UserService {
         }
 
         userRepo.save(user);
-        Hibernate.initialize(user.getRoles()); // Инициализируем roles перед возвратом
+        Hibernate.initialize(user.getRoles());
         return user;
     }
 
