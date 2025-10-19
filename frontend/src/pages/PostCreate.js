@@ -1,30 +1,25 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createPost } from "../api";
+import { useQuery } from "@tanstack/react-query";
+import { searchUsers } from "../api";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import Loader from "../component/Loader";
 
-const PostCreate = () => {
-    const [content, setContent] = useState("");
-    const [image, setImage] = useState(null);
-    const navigate = useNavigate();
-    const queryClient = useQueryClient();
+const Search = () => {
+    const [query, setQuery] = useState("");
 
-    const mutation = useMutation({
-        mutationFn: (formData) => createPost(formData),
-        onSuccess: () => {
-            queryClient.invalidateQueries(["posts"]);
-            navigate("/");
-        },
+    const { data: users, isLoading, error } = useQuery({
+        queryKey: ["search", query],
+        queryFn: () => searchUsers(query),
+        enabled: !!query,
     });
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const formData = new FormData();
-        formData.append("content", content);
-        if (image) formData.append("image", image);
-        mutation.mutate(formData);
-    };
+    if (error)
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-insta-gray dark:bg-black">
+                <p className="text-red-500 text-lg font-semibold">Error: {error.message}</p>
+            </div>
+        );
 
     return (
         <motion.div
@@ -34,34 +29,38 @@ const PostCreate = () => {
             transition={{ duration: 0.5 }}
         >
             <div className="p-4">
-                <h2 className="text-lg font-semibold text-insta-dark dark:text-white mb-4">Create a Post</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-          <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind?"
-              className="insta-input w-full h-24 resize-none"
-          />
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setImage(e.target.files[0])}
-                        className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-insta-blue file:text-white hover:file:bg-blue-700"
-                    />
-                    {image && (
-                        <img
-                            src={URL.createObjectURL(image)}
-                            alt="preview"
-                            className="w-full h-64 object-cover rounded-lg mt-2"
-                        />
-                    )}
-                    <button type="submit" className="insta-button w-full" disabled={mutation.isLoading}>
-                        {mutation.isLoading ? "Posting..." : "Post"}
-                    </button>
-                </form>
+                <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search users..."
+                    className="insta-input w-full mb-4"
+                />
+                {isLoading && <Loader />}
+                {users?.length > 0 ? (
+                    <div className="space-y-4">
+                        {users.map((user) => (
+                            <Link to={`/profile/${user.username}`} key={user.id}>
+                                <div className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition rounded-lg">
+                                    <img
+                                        src={user.profilePicture || "https://via.placeholder.com/50"}
+                                        alt="avatar"
+                                        className="w-12 h-12 rounded-full object-cover mr-3"
+                                    />
+                                    <div>
+                                        <p className="font-semibold text-insta-dark dark:text-white">{user.username}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{user.name || "No name"}</p>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                ) : query && !isLoading ? (
+                    <p className="text-center text-insta-dark dark:text-gray-300">No users found.</p>
+                ) : null}
             </div>
         </motion.div>
     );
 };
 
-export default PostCreate;
+export default Search;
